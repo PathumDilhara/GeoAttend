@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:geo_attend/screens/home_screen.dart';
+import 'package:geo_attend/router/router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 void main() {
@@ -11,14 +11,14 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       debugShowCheckedModeBanner: false,
       title: "Geo-Tagged Attendance Management App",
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.greenAccent),
       ),
-      home: HomeScreen(),
+      routerConfig: AppRouter.router,
     );
   }
 }

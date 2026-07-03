@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geo_attend/models/attendance_model.dart';
+import 'package:geo_attend/router/router_paths.dart';
 import 'package:geo_attend/widgets/custom_button.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../providers/attendance_provider.dart';
@@ -10,7 +12,6 @@ class HomeScreen extends ConsumerWidget {
   HomeScreen({super.key});
 
   double cardBR = 15;
-
   double mainPad = 16;
 
   @override
@@ -47,7 +48,7 @@ class HomeScreen extends ConsumerWidget {
             _buildCurrentStateCard(screenHeight),
 
             // Recent history
-            _buildRecentHistoryCard(screenHeight, ref),
+            _buildRecentHistoryCard(context, screenHeight, ref),
           ],
         ),
       ),
@@ -226,7 +227,11 @@ class HomeScreen extends ConsumerWidget {
   }
 
   // =================== Attendance recent history ======================
-  Widget _buildRecentHistoryCard(double screenHeight, WidgetRef ref) {
+  Widget _buildRecentHistoryCard(
+    BuildContext context,
+    double screenHeight,
+    WidgetRef ref,
+  ) {
     final recentList = ref.watch(attendanceProvider.notifier).recentThree;
 
     return Container(
@@ -273,30 +278,45 @@ class HomeScreen extends ConsumerWidget {
           else
             Stack(
               children: [
-                Material(
-                  clipBehavior: Clip.antiAlias,
-                  color: Colors.grey.shade200,
-                  child: SizedBox(
-                    height: screenHeight * 0.2,
-                    child: ListView.builder(
-                      itemCount: recentList.length,
-                      itemBuilder: (context, index) {
-                        AttendanceModel item = recentList[index];
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 20.0),
+                  child: Material(
+                    clipBehavior: Clip.antiAlias,
+                    color: Colors.grey.shade200,
+                    child: SizedBox(
+                      height: screenHeight * 0.2,
+                      child: ListView.builder(
+                        itemCount: recentList.length,
+                        itemBuilder: (context, index) {
+                          AttendanceModel item = recentList[index];
 
-                        return Column(
-                          children: [
-                            ListTile(
-                              tileColor: Colors.grey.shade200,
-                              title: Text(item.type),
-                              subtitle: Text(item.dateTime.toString()),
-                              onTap: () {
-                                // TODO : go to details page
-                              },
-                            ),
-                            Divider(),
-                          ],
-                        );
-                      },
+                          return Column(
+                            children: [
+                              ListTile(
+                                tileColor: Colors.grey.shade200,
+                                title: Text(
+                                  item.type,
+                                  style: TextStyle(
+                                    color:
+                                        item.type == "Check In"
+                                            ? Colors.green
+                                            : Colors.red,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                                subtitle: Text(item.dateTime.toString()),
+                                onTap: () {
+                                  GoRouter.of(context).push(
+                                    "/${RouterPaths.details}",
+                                    extra: item,
+                                  );
+                                },
+                              ),
+                              Divider(),
+                            ],
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ),
@@ -309,7 +329,7 @@ class HomeScreen extends ConsumerWidget {
                     title: "more",
                     bgColor: Colors.green,
                     onTap: () {
-                      // TODO : anv to histy page
+                      GoRouter.of(context).push("/${RouterPaths.history}");
                     },
                   ),
                 ),
