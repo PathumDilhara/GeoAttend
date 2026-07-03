@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geo_attend/models/attendance_model.dart';
 import 'package:geo_attend/widgets/custom_button.dart';
+import 'package:intl/intl.dart';
 
-class HomeScreen extends StatefulWidget {
-  const HomeScreen({super.key});
+import '../providers/attendance_provider.dart';
 
-  @override
-  State<HomeScreen> createState() => _HomeScreenState();
-}
+class HomeScreen extends ConsumerWidget {
+  HomeScreen({super.key});
 
-class _HomeScreenState extends State<HomeScreen> {
   double cardBR = 15;
+
   double mainPad = 16;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final screenHeight = MediaQuery.of(context).size.height;
     final screenWidth = MediaQuery.of(context).size.width;
+
     return Scaffold(
       // appBar: AppBar(title: Text("GeoAttend")),
       body: SingleChildScrollView(
@@ -27,14 +29,14 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Stack(
                 children: [
                   // Employee data card
-                  _buildEmployeeInformationCard(screenHeight),
+                  _buildEmployeeInformationCard(screenHeight, ref),
 
                   // Check in checkout card
                   Positioned(
                     bottom: 0,
                     left: 10,
                     right: 10,
-                    child: _buildCheckInOutCard(screenHeight),
+                    child: _buildCheckInOutCard(screenHeight, ref),
                   ),
                 ],
               ),
@@ -45,7 +47,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildCurrentStateCard(screenHeight),
 
             // Recent history
-            _buildRecentHistoryCard(screenHeight),
+            _buildRecentHistoryCard(screenHeight, ref),
           ],
         ),
       ),
@@ -53,7 +55,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ======================== Employe information card =============
-  Widget _buildEmployeeInformationCard(double screenHeight) {
+  Widget _buildEmployeeInformationCard(double screenHeight, WidgetRef ref) {
+    final currentTime = ref.watch(currentTimeProvider);
+
     return Container(
       padding: EdgeInsets.symmetric(vertical: 50, horizontal: 30),
       width: double.infinity,
@@ -102,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // Today date
               Text(
-                "03 July 2026",
+                DateFormat('dd MMMM yyyy').format(DateTime.now()),
                 softWrap: true,
                 style: TextStyle(
                   fontSize: 20,
@@ -115,7 +119,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
               // current live time
               Text(
-                "10:30 AM",
+                currentTime.when(
+                  data: (time) => DateFormat('hh:mm:ss a').format(time),
+                  error: (error, stackTrace) => "Error",
+                  loading: () => "__:__:__",
+                ),
                 softWrap: true,
                 style: TextStyle(
                   fontSize: 20,
@@ -132,7 +140,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // ===================== Check in out card =============================
-  Widget _buildCheckInOutCard(double screenHeight) {
+  Widget _buildCheckInOutCard(double screenHeight, WidgetRef ref) {
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 50),
       width: double.infinity,
@@ -152,9 +160,21 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          customButton(title: "Check In", bgColor: Colors.green, onTap: () {}),
+          customButton(
+            title: "Check In",
+            bgColor: Colors.green,
+            onTap: () {
+              ref.read(attendanceProvider.notifier).checkIn();
+            },
+          ),
           SizedBox(width: 20),
-          customButton(title: "Check Out", bgColor: Colors.red, onTap: () {}),
+          customButton(
+            title: "Check Out",
+            bgColor: Colors.red,
+            onTap: () {
+              ref.read(attendanceProvider.notifier).checkOut();
+            },
+          ),
         ],
       ),
     );
@@ -190,12 +210,12 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.black,
             ),
           ),
-          SizedBox(height: 10,),
+          SizedBox(height: 10),
 
           Text(
             "Last Location :  6.92, 79.86", // TODO
             style: TextStyle(
-              fontSize: 20,
+              fontSize: 15,
               fontWeight: FontWeight.w500,
               color: Colors.black,
             ),
@@ -206,7 +226,9 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // =================== Attendance recent history ======================
-  Widget _buildRecentHistoryCard(double screenHeight) {
+  Widget _buildRecentHistoryCard(double screenHeight, WidgetRef ref) {
+    final recentList = ref.watch(attendanceProvider.notifier).recentThree;
+
     return Container(
       margin: EdgeInsets.all(mainPad),
       padding: EdgeInsets.all(16),
@@ -235,24 +257,64 @@ class _HomeScreenState extends State<HomeScreen> {
               color: Colors.black,
             ),
           ),
+          SizedBox(height: 10),
 
-          Material(
-            clipBehavior: Clip.antiAlias,
-            color:  Colors.grey.shade200,
-            child: SizedBox(
-              height: screenHeight * 0.2,
-              child: ListView.builder(
-                itemCount: 3,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    tileColor: Colors.grey.shade200,
-                    title: Text("Title"),
-                    subtitle: Text("Subtitle"),
-                  );
-                },
+          if (recentList.isEmpty)
+            Center(
+              child: Text(
+                "There is not record to show",
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w400,
+                  color: Colors.black,
+                ),
               ),
+            )
+          else
+            Stack(
+              children: [
+                Material(
+                  clipBehavior: Clip.antiAlias,
+                  color: Colors.grey.shade200,
+                  child: SizedBox(
+                    height: screenHeight * 0.2,
+                    child: ListView.builder(
+                      itemCount: recentList.length,
+                      itemBuilder: (context, index) {
+                        AttendanceModel item = recentList[index];
+
+                        return Column(
+                          children: [
+                            ListTile(
+                              tileColor: Colors.grey.shade200,
+                              title: Text(item.type),
+                              subtitle: Text(item.dateTime.toString()),
+                              onTap: () {
+                                // TODO : go to details page
+                              },
+                            ),
+                            Divider(),
+                          ],
+                        );
+                      },
+                    ),
+                  ),
+                ),
+
+                Positioned(
+                  bottom: 0,
+                  left: 50,
+                  right: 50,
+                  child: customButton(
+                    title: "more",
+                    bgColor: Colors.green,
+                    onTap: () {
+                      // TODO : anv to histy page
+                    },
+                  ),
+                ),
+              ],
             ),
-          ),
         ],
       ),
     );
