@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geo_attend/enums/att_enum.dart';
 import 'package:geo_attend/models/attendance_model.dart';
+import 'package:uuid/uuid.dart';
 
 class AttendanceNotifier extends Notifier<List<AttendanceModel>> {
   @override
@@ -11,24 +13,36 @@ class AttendanceNotifier extends Notifier<List<AttendanceModel>> {
       state.reversed.take(3).toList();
 
   // Check In
-  void checkIn() {
+  void checkIn({
+    required String employeeName,
+    required double latitude,
+    required double longitude
+}) {
     final record = AttendanceModel(
-      type: "Check In",
+      id: Uuid().v4(),
+      employeeName: employeeName,
+      type: AttendanceTypeEnum.checkIn,
       dateTime: DateTime.now(),
-      latitude: 6.9271,
-      longitude: 79.8612,
+      latitude: latitude,
+      longitude: longitude,
     );
 
     state = [...state, record];
   }
 
   // Check Out
-  void checkOut() {
+  void checkOut({
+    required String employeeName,
+    required double latitude,
+    required double longitude
+}) {
     final record = AttendanceModel(
-      type: "Check Out",
+      id: Uuid().v4(),
+      employeeName: employeeName,
+      type: AttendanceTypeEnum.checkOut,
       dateTime: DateTime.now(),
-      latitude: 6.9271,
-      longitude: 79.8612,
+      latitude: latitude,
+      longitude: longitude,
     );
 
     state = [...state, record];

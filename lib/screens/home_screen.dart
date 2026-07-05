@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geo_attend/enums/att_enum.dart';
 import 'package:geo_attend/models/attendance_model.dart';
 import 'package:geo_attend/router/router_paths.dart';
 import 'package:geo_attend/widgets/custom_button.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
-import '../providers/attendance_provider.dart';
+import '../providers/providers.dart';
 
 class HomeScreen extends ConsumerWidget {
   HomeScreen({super.key});
@@ -26,7 +27,7 @@ class HomeScreen extends ConsumerWidget {
           children: [
             // Employee data card + check in/out card
             SizedBox(
-              height: screenHeight * 0.35,
+              height: screenHeight * 0.30,
               child: Stack(
                 children: [
                   // Employee data card
@@ -42,10 +43,10 @@ class HomeScreen extends ConsumerWidget {
                 ],
               ),
             ),
-            SizedBox(height: 50),
+            SizedBox(height: 20),
 
             // current state showing
-            _buildCurrentStateCard(screenHeight),
+            _buildCurrentStateCard(screenHeight, ref),
 
             // Recent history
             _buildRecentHistoryCard(context, screenHeight, ref),
@@ -59,10 +60,12 @@ class HomeScreen extends ConsumerWidget {
   Widget _buildEmployeeInformationCard(double screenHeight, WidgetRef ref) {
     final currentTime = ref.watch(currentTimeProvider);
 
+    final userAsync = ref.watch(currentUserProvider);
+
     return Container(
       padding: EdgeInsets.symmetric(vertical: 50, horizontal: 30),
       width: double.infinity,
-      height: screenHeight * 0.3,
+      height: screenHeight * 0.25,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(cardBR),
@@ -95,7 +98,11 @@ class HomeScreen extends ConsumerWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                "John Doe",
+                userAsync.when(
+                  data: (user) => user.userName,
+                  error: (_, _) => "Error",
+                  loading: () => "Loading...",
+                ),
                 softWrap: true,
                 style: TextStyle(
                   fontSize: 30,
@@ -142,6 +149,8 @@ class HomeScreen extends ConsumerWidget {
 
   // ===================== Check in out card =============================
   Widget _buildCheckInOutCard(double screenHeight, WidgetRef ref) {
+    final currentState = ref.watch(currentStateProvider);
+
     return Container(
       margin: EdgeInsets.symmetric(horizontal: 50),
       width: double.infinity,
@@ -163,17 +172,45 @@ class HomeScreen extends ConsumerWidget {
         children: [
           customButton(
             title: "Check In",
-            bgColor: Colors.green,
+            bgColor:
+                currentState == AttendanceTypeEnum.checkIn
+                    ? Colors.grey
+                    : Colors.green,
             onTap: () {
-              ref.read(attendanceProvider.notifier).checkIn();
+              if (currentState == AttendanceTypeEnum.checkOut) {
+                final user = ref.read(currentUserProvider).value;
+                if (user == null) return;
+
+                ref
+                    .read(attendanceListProvider.notifier)
+                    .checkIn(
+                      employeeName: user.userName,
+                      latitude: 12.345,
+                      longitude: 23.234,
+                    );
+              }
             },
           ),
           SizedBox(width: 20),
           customButton(
             title: "Check Out",
-            bgColor: Colors.red,
+            bgColor:
+                currentState == AttendanceTypeEnum.checkOut
+                    ? Colors.grey
+                    : Colors.red,
             onTap: () {
-              ref.read(attendanceProvider.notifier).checkOut();
+              if (currentState == AttendanceTypeEnum.checkIn) {
+                final user = ref.read(currentUserProvider).value;
+                if (user == null) return;
+
+                ref
+                    .read(attendanceListProvider.notifier)
+                    .checkOut(
+                      employeeName: user.userName,
+                      latitude: 123.456,
+                      longitude: 45.12,
+                    );
+              }
             },
           ),
         ],
@@ -182,7 +219,10 @@ class HomeScreen extends ConsumerWidget {
   }
 
   // ================================ Current state card ======================
-  Widget _buildCurrentStateCard(double screenHeight) {
+  Widget _buildCurrentStateCard(double screenHeight, WidgetRef ref) {
+    final currentState = ref.watch(currentStateProvider);
+    final lastLocation = ref.watch(lastLocationProvider);
+
     return Container(
       margin: EdgeInsets.all(mainPad),
       padding: EdgeInsets.all(16),
@@ -204,17 +244,20 @@ class HomeScreen extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            "Status : Checked In", // TODO
+            "Status : ${currentState.name.toString()}",
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w500,
-              color: Colors.black,
+              color:
+                  currentState == AttendanceTypeEnum.checkIn
+                      ? Colors.green
+                      : Colors.red,
             ),
           ),
           SizedBox(height: 10),
 
           Text(
-            "Last Location :  6.92, 79.86", // TODO
+            "Last Location :  ${lastLocation.latitude}, ${lastLocation.longitude}",
             style: TextStyle(
               fontSize: 15,
               fontWeight: FontWeight.w500,
@@ -232,7 +275,7 @@ class HomeScreen extends ConsumerWidget {
     double screenHeight,
     WidgetRef ref,
   ) {
-    final recentList = ref.watch(attendanceProvider.notifier).recentThree;
+    final recentList = ref.watch(attendanceListProvider.notifier).recentThree;
 
     return Container(
       margin: EdgeInsets.all(mainPad),
@@ -276,16 +319,18 @@ class HomeScreen extends ConsumerWidget {
               ),
             )
           else
-            Stack(
+            Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(bottom: 20.0),
+                  padding: const EdgeInsets.only(bottom: 5.0),
                   child: Material(
                     clipBehavior: Clip.antiAlias,
                     color: Colors.grey.shade200,
                     child: SizedBox(
-                      height: screenHeight * 0.2,
+                      height: screenHeight * 0.25,
                       child: ListView.builder(
+                        padding: EdgeInsets.zero,
                         itemCount: recentList.length,
                         itemBuilder: (context, index) {
                           AttendanceModel item = recentList[index];
@@ -295,16 +340,20 @@ class HomeScreen extends ConsumerWidget {
                               ListTile(
                                 tileColor: Colors.grey.shade200,
                                 title: Text(
-                                  item.type,
+                                  item.type.name.toString(),
                                   style: TextStyle(
                                     color:
-                                        item.type == "Check In"
+                                        item.type == AttendanceTypeEnum.checkIn
                                             ? Colors.green
                                             : Colors.red,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                subtitle: Text(item.dateTime.toString()),
+                                subtitle: Text(
+                                  DateFormat(
+                                    "DD MMMM yyyy",
+                                  ).format(item.dateTime),
+                                ),
                                 onTap: () {
                                   GoRouter.of(context).push(
                                     "/${RouterPaths.details}",
@@ -321,17 +370,12 @@ class HomeScreen extends ConsumerWidget {
                   ),
                 ),
 
-                Positioned(
-                  bottom: 0,
-                  left: 50,
-                  right: 50,
-                  child: customButton(
-                    title: "more",
-                    bgColor: Colors.green,
-                    onTap: () {
-                      GoRouter.of(context).push("/${RouterPaths.history}");
-                    },
-                  ),
+                customButton(
+                  title: "more",
+                  bgColor: Colors.green,
+                  onTap: () {
+                    GoRouter.of(context).push("/${RouterPaths.history}");
+                  },
                 ),
               ],
             ),
