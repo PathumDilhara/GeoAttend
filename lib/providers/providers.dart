@@ -3,7 +3,6 @@ import 'package:geo_attend/models/attendance_model.dart';
 import 'package:geo_attend/models/position_data.dart';
 import 'package:geo_attend/models/user_model.dart';
 import 'package:geo_attend/providers/attendance_notifier.dart';
-import 'package:geo_attend/services/location_service.dart';
 import 'package:geo_attend/services/user_service.dart';
 
 import '../enums/att_enum.dart';

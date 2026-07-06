@@ -16,11 +16,10 @@ class HomeScreen extends ConsumerWidget {
   final double cardBR = 15;
   final double mainPad = 16;
 
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final screenHeight = MediaQuery.of(context).size.height;
-    final screenWidth = MediaQuery.of(context).size.width;
+    // final screenWidth = MediaQuery.of(context).size.width;
 
     return Scaffold(
       // appBar: AppBar(title: Text("GeoAttend")),
@@ -58,7 +57,7 @@ class HomeScreen extends ConsumerWidget {
     );
   }
 
-  // ======================== Employe information card =============
+  // ======================== Employee information card =============
   Widget _buildEmployeeInformationCard(double screenHeight, WidgetRef ref) {
     final currentTime = ref.watch(currentTimeProvider);
 
@@ -184,29 +183,16 @@ class HomeScreen extends ConsumerWidget {
                     ? Colors.green
                     : Colors.grey,
             onTap: () async {
-              if (context.mounted) {
-                loadingDialog(context);
-              }
-
               if (currentState == AttendanceTypeEnum.checkOut ||
                   currentState == AttendanceTypeEnum.pending) {
-                final user = ref.read(currentUserProvider).value;
-                if (user == null) return;
-
-                final service = LocationService();
-                final pos = await service.getCurrentLocation();
-
-                if (context.mounted) {
-                  Navigator.pop(context);
+                loadingDialog(context);
+                try {
+                  await ref.read(attendanceListProvider.notifier).checkIn();
+                } finally {
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                  }
                 }
-
-                ref
-                    .read(attendanceListProvider.notifier)
-                    .checkIn(
-                      employeeName: user.userName,
-                      latitude: pos.latitude,
-                      longitude: pos.longitude,
-                    );
               }
             },
           ),
@@ -219,28 +205,15 @@ class HomeScreen extends ConsumerWidget {
                     ? Colors.grey
                     : Colors.red,
             onTap: () async {
-              if (context.mounted) {
-                loadingDialog(context);
-              }
-
               if (currentState == AttendanceTypeEnum.checkIn) {
-                final user = ref.read(currentUserProvider).value;
-                if (user == null) return;
-
-                final service = LocationService();
-                final pos = await service.getCurrentLocation();
-
-                if (context.mounted) {
-                  Navigator.pop(context);
+                loadingDialog(context);
+                try {
+                  await ref.read(attendanceListProvider.notifier).checkOut();
+                } finally {
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                  }
                 }
-
-                ref
-                    .read(attendanceListProvider.notifier)
-                    .checkOut(
-                      employeeName: user.userName,
-                      latitude: pos.latitude,
-                      longitude: pos.longitude,
-                    );
               }
             },
           ),
@@ -380,9 +353,7 @@ class HomeScreen extends ConsumerWidget {
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
-                                subtitle: Text(
-                                  dateFormatter(item.date),
-                                ),
+                                subtitle: Text(dateFormatter(item.date)),
                                 onTap: () {
                                   GoRouter.of(context).push(
                                     "/${RouterPaths.details}",

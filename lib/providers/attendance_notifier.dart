@@ -1,7 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geo_attend/enums/att_enum.dart';
 import 'package:geo_attend/models/attendance_model.dart';
+import 'package:geo_attend/providers/providers.dart';
 import 'package:uuid/uuid.dart';
+
+import '../services/location_service.dart';
 
 class AttendanceNotifier extends Notifier<List<AttendanceModel>> {
   @override
@@ -13,36 +16,42 @@ class AttendanceNotifier extends Notifier<List<AttendanceModel>> {
       state.reversed.take(3).toList();
 
   // Check In
-  void checkIn({
-    required String employeeName,
-    required double latitude,
-    required double longitude
-}) {
+  Future<void> checkIn() async {
+
+    final user = ref.read(currentUserProvider).value;
+    String name = user !=null ? user.userName : "";
+
+    final service = LocationService();
+    final pos = await service.getCurrentLocation();
+
     final record = AttendanceModel(
       id: Uuid().v4(),
-      employeeName: employeeName,
+      employeeName: name,
       type: AttendanceTypeEnum.checkIn,
       date: DateTime.now(),
-      latitude: latitude,
-      longitude: longitude,
+      latitude: pos.latitude,
+      longitude: pos.longitude,
     );
 
     state = [...state, record];
   }
 
   // Check Out
-  void checkOut({
-    required String employeeName,
-    required double latitude,
-    required double longitude
-}) {
+  Future<void> checkOut() async {
+    final user = ref.read(currentUserProvider).value;
+    String name = user !=null ? user.userName : "";
+
+    final service = LocationService();
+    final pos = await service.getCurrentLocation();
+
+
     final record = AttendanceModel(
       id: Uuid().v4(),
-      employeeName: employeeName,
+      employeeName: name,
       type: AttendanceTypeEnum.checkOut,
       date: DateTime.now(),
-      latitude: latitude,
-      longitude: longitude,
+      latitude: pos.latitude,
+      longitude: pos.longitude,
     );
 
     state = [...state, record];
