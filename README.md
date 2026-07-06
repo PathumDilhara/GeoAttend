@@ -1,4 +1,4 @@
-# 📍 GeoAttend – Geo-Tagged Attendance App
+# GeoAttend – Geo-Tagged Attendance App
 
 GeoAttend is a Flutter-based attendance management system that allows employees to **check in and check out using real-time GPS location**.  
 The app stores attendance records with **date, time, latitude, and longitude**, and displays full history tracking.
