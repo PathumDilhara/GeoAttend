@@ -1,1 +1,1 @@
-enum AttendanceTypeEnum { checkIn, checkOut }
+enum AttendanceTypeEnum { checkIn, checkOut, pending }

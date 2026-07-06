@@ -8,12 +8,15 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 import '../providers/providers.dart';
+import '../services/location_service.dart';
 
 class HomeScreen extends ConsumerWidget {
   HomeScreen({super.key});
 
   double cardBR = 15;
   double mainPad = 16;
+
+  ValueNotifier<bool> isFetching = ValueNotifier(false);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -38,7 +41,7 @@ class HomeScreen extends ConsumerWidget {
                     bottom: 0,
                     left: 10,
                     right: 10,
-                    child: _buildCheckInOutCard(screenHeight, ref),
+                    child: _buildCheckInOutCard(context, screenHeight, ref),
                   ),
                 ],
               ),
@@ -148,7 +151,11 @@ class HomeScreen extends ConsumerWidget {
   }
 
   // ===================== Check in out card =============================
-  Widget _buildCheckInOutCard(double screenHeight, WidgetRef ref) {
+  Widget _buildCheckInOutCard(
+    BuildContext context,
+    double screenHeight,
+    WidgetRef ref,
+  ) {
     final currentState = ref.watch(currentStateProvider);
 
     return Container(
@@ -173,20 +180,33 @@ class HomeScreen extends ConsumerWidget {
           customButton(
             title: "Check In",
             bgColor:
-                currentState == AttendanceTypeEnum.checkIn
-                    ? Colors.grey
-                    : Colors.green,
-            onTap: () {
-              if (currentState == AttendanceTypeEnum.checkOut) {
+                currentState == AttendanceTypeEnum.checkOut ||
+                        currentState == AttendanceTypeEnum.pending
+                    ? Colors.green
+                    : Colors.grey,
+            onTap: () async {
+              if (context.mounted) {
+                loadingDialog(context);
+              }
+
+              if (currentState == AttendanceTypeEnum.checkOut ||
+                  currentState == AttendanceTypeEnum.pending) {
                 final user = ref.read(currentUserProvider).value;
                 if (user == null) return;
+
+                final service = LocationService();
+                final pos = await service.getCurrentLocation();
+
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
 
                 ref
                     .read(attendanceListProvider.notifier)
                     .checkIn(
                       employeeName: user.userName,
-                      latitude: 12.345,
-                      longitude: 23.234,
+                      latitude: pos.latitude,
+                      longitude: pos.longitude,
                     );
               }
             },
@@ -195,20 +215,32 @@ class HomeScreen extends ConsumerWidget {
           customButton(
             title: "Check Out",
             bgColor:
-                currentState == AttendanceTypeEnum.checkOut
+                currentState == AttendanceTypeEnum.checkOut ||
+                        currentState == AttendanceTypeEnum.pending
                     ? Colors.grey
                     : Colors.red,
-            onTap: () {
+            onTap: () async {
+              if (context.mounted) {
+                loadingDialog(context);
+              }
+
               if (currentState == AttendanceTypeEnum.checkIn) {
                 final user = ref.read(currentUserProvider).value;
                 if (user == null) return;
+
+                final service = LocationService();
+                final pos = await service.getCurrentLocation();
+
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
 
                 ref
                     .read(attendanceListProvider.notifier)
                     .checkOut(
                       employeeName: user.userName,
-                      latitude: 123.456,
-                      longitude: 45.12,
+                      latitude: pos.latitude,
+                      longitude: pos.longitude,
                     );
               }
             },
@@ -227,7 +259,7 @@ class HomeScreen extends ConsumerWidget {
       margin: EdgeInsets.all(mainPad),
       padding: EdgeInsets.all(16),
       width: double.infinity,
-      height: screenHeight * 0.2,
+      height: screenHeight * 0.15,
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(cardBR),
         color: Colors.grey.shade200,
@@ -371,7 +403,7 @@ class HomeScreen extends ConsumerWidget {
                 ),
 
                 customButton(
-                  title: "more",
+                  title: "see all",
                   bgColor: Colors.green,
                   onTap: () {
                     GoRouter.of(context).push("/${RouterPaths.history}");
@@ -381,6 +413,29 @@ class HomeScreen extends ConsumerWidget {
             ),
         ],
       ),
+    );
+  }
+
+  void loadingDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text("Location fetching", style: TextStyle(fontSize: 20)),
+              Divider(),
+            ],
+          ),
+          content: SizedBox(
+            height: 100,
+            child: Center(
+              child: CircularProgressIndicator(color: Colors.green),
+            ),
+          ),
+        );
+      },
     );
   }
 }
