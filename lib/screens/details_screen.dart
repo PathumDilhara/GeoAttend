@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:geo_attend/enums/att_enum.dart';
 import 'package:geo_attend/models/attendance_model.dart';
+import 'package:geo_attend/utils/date_time_formatter.dart';
 
 class DetailsScreen extends StatelessWidget {
   final AttendanceModel model;
@@ -28,7 +29,7 @@ class DetailsScreen extends StatelessWidget {
             ),
             SizedBox(height: 10),
             Text(
-              model.dateTime.toString(),
+              dateFormatter(model.date),
               style: TextStyle(fontSize: 16, fontWeight: FontWeight.w400),
             ),
             SizedBox(height: 10),

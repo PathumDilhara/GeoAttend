@@ -3,20 +3,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geo_attend/enums/att_enum.dart';
 import 'package:geo_attend/models/attendance_model.dart';
 import 'package:geo_attend/router/router_paths.dart';
+import 'package:geo_attend/utils/date_time_formatter.dart';
 import 'package:geo_attend/widgets/custom_button.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 import '../providers/providers.dart';
 import '../services/location_service.dart';
 
 class HomeScreen extends ConsumerWidget {
-  HomeScreen({super.key});
+  const HomeScreen({super.key});
 
-  double cardBR = 15;
-  double mainPad = 16;
+  final double cardBR = 15;
+  final double mainPad = 16;
 
-  ValueNotifier<bool> isFetching = ValueNotifier(false);
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -117,7 +116,7 @@ class HomeScreen extends ConsumerWidget {
 
               // Today date
               Text(
-                DateFormat('dd MMMM yyyy').format(DateTime.now()),
+                dateFormatter(DateTime.now()),
                 softWrap: true,
                 style: TextStyle(
                   fontSize: 20,
@@ -131,7 +130,7 @@ class HomeScreen extends ConsumerWidget {
               // current live time
               Text(
                 currentTime.when(
-                  data: (time) => DateFormat('hh:mm:ss a').format(time),
+                  data: (time) => timeFormatter(time),
                   error: (error, stackTrace) => "Error",
                   loading: () => "__:__:__",
                 ),
@@ -382,9 +381,7 @@ class HomeScreen extends ConsumerWidget {
                                   ),
                                 ),
                                 subtitle: Text(
-                                  DateFormat(
-                                    "DD MMMM yyyy",
-                                  ).format(item.dateTime),
+                                  dateFormatter(item.date),
                                 ),
                                 onTap: () {
                                   GoRouter.of(context).push(

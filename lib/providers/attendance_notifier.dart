@@ -22,7 +22,7 @@ class AttendanceNotifier extends Notifier<List<AttendanceModel>> {
       id: Uuid().v4(),
       employeeName: employeeName,
       type: AttendanceTypeEnum.checkIn,
-      dateTime: DateTime.now(),
+      date: DateTime.now(),
       latitude: latitude,
       longitude: longitude,
     );
@@ -40,7 +40,7 @@ class AttendanceNotifier extends Notifier<List<AttendanceModel>> {
       id: Uuid().v4(),
       employeeName: employeeName,
       type: AttendanceTypeEnum.checkOut,
-      dateTime: DateTime.now(),
+      date: DateTime.now(),
       latitude: latitude,
       longitude: longitude,
     );

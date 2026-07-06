@@ -30,7 +30,7 @@ class HistoryScreen extends ConsumerWidget {
                     fontWeight: FontWeight.bold
                   ),
                 ),
-                subtitle: Text(DateFormat("DD MMMM yyyy").format(item.dateTime)),
+                subtitle: Text(DateFormat("DD MMMM yyyy").format(item.date)),
                 onTap: () {
                   GoRouter.of(
                     context,

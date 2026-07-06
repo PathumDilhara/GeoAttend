@@ -4,7 +4,7 @@ class AttendanceModel {
   final String id;
   final String employeeName;
   final AttendanceTypeEnum type;
-  final DateTime dateTime;
+  final DateTime date;
   final double latitude;
   final double longitude;
 
@@ -12,7 +12,7 @@ class AttendanceModel {
     required this.id,
     required this.employeeName,
     required this.type,
-    required this.dateTime,
+    required this.date,
     required this.latitude,
     required this.longitude,
   });
